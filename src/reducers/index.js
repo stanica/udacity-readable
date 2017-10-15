@@ -2,7 +2,6 @@ import { combineReducers } from 'redux'
 
 import {
   SET_VOTE,
-  ADD_POST,
   REMOVE_COMMENT,
   EDIT_POST,
   REMOVE_POST,
@@ -12,7 +11,8 @@ import {
   SET_POST,
   SET_COMMENTS,
   CLEAR_POSTS,
-  SET_VOTE_COMMENT
+  SET_VOTE_COMMENT,
+  SET_POSTS_COUNT
 } from '../actions';
 
 const initialState = {
@@ -62,7 +62,7 @@ function comments (state = [], action){
 }
 
 function app (state = initialState, action){
-  const { category, categories, post, vote } = action;
+  const { category, categories, post, vote, count } = action;
   switch (action.type){
     case SET_CATEGORY:
       return {
@@ -83,11 +83,6 @@ function app (state = initialState, action){
           (postItem, n) => n === post.index ? { ...postItem, body: post.body, title: post.title}
                                             : postItem
         )
-      }
-
-    case ADD_POST:
-      return {
-
       }
 
     case SET_POST:
@@ -117,6 +112,12 @@ function app (state = initialState, action){
           (post, n) => n === vote.index ? { ...post, voteScore: vote.voteScore }
                                         : post
         )
+      }
+
+    case SET_POSTS_COUNT:
+      return {
+        ...state,
+        count
       }
 
     default:

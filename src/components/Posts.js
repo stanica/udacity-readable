@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { FormattedRelative } from 'react-intl';
 import { connect } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { setPost, clearPosts } from '../actions';
+import { setPost, clearPosts, createPost } from '../actions';
 import Vote from './Vote.js';
 const uuid = require ('uuid/v1');
 const Grid = require('react-bootstrap').Grid;
@@ -34,30 +34,11 @@ class Posts extends Component {
   }
 
   addPost(){
-    if(this.state.newPostBody.length > 0 && this.state.newPostTitle.length > 0 && this.state.selectedCategory !== 'Choose a category'){
-      const url = `http://localhost:3001/posts`;
-      console.log('fetching from url', url);
-      var body = {
-        id: uuid(),
-        timestamp: Date.now(),
-        body: this.state.newPostBody,
-        title: this.state.newPostTitle,
-        author: 'user' + Math.floor(Math.random() * 2000) + 1,
-        category: this.state.selectedCategory
-      }
-      fetch(url,{
-                  method: 'post',
-                  headers: { 'Authorization': 'my-auth', 'Content-Type': 'application/json' },
-                  credentials: 'same-origin',
-                  body: JSON.stringify(body)
-                })
-        .then( (res) => { return(res.text()) })
-        .then((data) => {
-          data = JSON.parse(data);
-          this.props.postsSet(data);
-          this.setState({ newPostTitle: '', newPostBody: '' })
-          this.close();
-        });
+    if(this.state.newPostBody.length > 0 && this.state.newPostTitle.length > 0 && this.state.selectedCategory !== 'Choose a category...'){
+      const id = uuid();
+      this.props.createPost(id, this.state.newPostBody, this.state.newPostTitle, this.state.selectedCategory);
+      this.setState({ newPostTitle: '', newPostBody: '' })
+      this.close();
     }
     else {
       window.alert('Your must fill in the Title and Body fields and selecte a category for the post');
@@ -81,15 +62,15 @@ class Posts extends Component {
 
   sort(prop){
     this.setState({selected:prop[0].toUpperCase() + prop.slice(1,prop.length)})
-    if (this.prop === 'votes'){
-      this.props.app.posts.sort((x,y) => {
-        return (y.voteScore - x.voteScore) * this.state.sort;
-      });
-    }
-    else {
+    if (prop === 'time'){
       this.props.app.posts.sort((x,y) => {
         return (y.timestamp - x.timestamp) * this.state.sort;
       })
+    }
+    else {
+      this.props.app.posts.sort((x,y) => {
+        return (y.voteScore - x.voteScore) * this.state.sort;
+      });
     }
     this.setState({sort: this.state.sort * -1});
     this.props.postsClear();
@@ -162,7 +143,8 @@ function mapStateToProps ({comments, app}){
 function mapDispatchToProps(dispatch){
   return {
     postsSet: (data) => dispatch(setPost(data)),
-    postsClear: () => dispatch(clearPosts())
+    postsClear: () => dispatch(clearPosts()),
+    createPost: (id, body, title, category) => dispatch(createPost(id, body, title, category))
   }
 }
 

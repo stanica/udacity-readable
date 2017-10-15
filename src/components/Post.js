@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { withRouter } from 'react-router';
 import { connect } from 'react-redux';
 import { FormattedRelative } from 'react-intl';
-import { setPost, editComment, removeComment, editPost, removePost } from '../actions';
+import { setPost, removeComment, editPost, removePost, editCommentFetch, addCommentFetch } from '../actions';
 import Vote from './Vote.js';
 const uuid = require ('uuid/v1');
 const Grid = require('react-bootstrap').Grid;
@@ -23,40 +23,6 @@ class Post extends Component {
     }
   }
 
-  componentDidMount(){
-    if(!this.props.app.posts.length){
-      const url = `http://localhost:3001/posts/${this.props.match.params.id}`;
-      console.log('fetching from url', url);
-      fetch(url, { headers: { 'Authorization': 'my-auth'},
-                   credentials: 'same-origin'} )
-        .then( (res) => { return(res.text()) })
-        .then((data) => {
-          data = JSON.parse(data);
-          if(data.id){
-            let commentsUrl = `http://localhost:3001/posts/${data.id}/comments`;
-            console.log('fetching from url', commentsUrl);
-            fetch(commentsUrl, { headers: { 'Authorization': 'my-auth'},
-                         credentials: 'same-origin'} )
-              .then( (res) => { return(res.text()) })
-              .then((comments) => {
-                //data.comments = JSON.parse(comments);
-                //data.comments.sort((x,y) => y.voteScore - x.voteScore);
-
-                var obj = {
-                  key: data.id,
-                  comments: JSON.parse(comments).sort((x,y) => y.voteScore - x.voteScore)
-                }
-                this.props.postsSet(data);
-                this.props.commentsSet(obj);
-              });
-            }
-            else {
-              this.props.history.push('/');
-            }
-        });
-    }
-  }
-
   editPost(post, id, index, remove){
     this.props.app.posts.map(
       (postItem, n) => {
@@ -66,90 +32,23 @@ class Post extends Component {
       }
     );
     this.setState({editingPost:false});
-    const url = `http://localhost:3001/posts/${id}`;
-    console.log('fetching from url', url);
-    var body = {
-      timestamp: Date.now(),
-      body: this.state.editedPostBody,
-      title: this.state.editedPostTitle
+    this.props.editPost(id, remove, index, this.state.editedPostBody, this.state.editedPostTitle);
+    if(remove){
+      this.props.history.push('/');
     }
-    fetch(url,{
-                method: remove ? 'delete' : 'put',
-                headers: { 'Authorization': 'my-auth', 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify(body)
-              })
-      .then( (res) => { return(res.text()) })
-      .then((data) => {
-        data = JSON.parse(data);
-        data.index = index;
-        if(!remove){
-          this.props.postEdit(data);
-        }
-        else {
-          this.props.postRemove(data);
-          this.props.history.push('/');
-        }
-      });
   }
 
   editComment(comment, id, index, remove){
     this.setState({editing:{state:false, id:''}});
     if(this.state.editedComment !== comment){
-      const url = `http://localhost:3001/comments/${id}`;
-      console.log('fetching from url', url);
-      var body = {
-        timestamp: Date.now(),
-        body: this.state.editedComment
-      }
-      fetch(url,{
-                  method: remove ? 'delete' : 'put',
-                  headers: { 'Authorization': 'my-auth', 'Content-Type': 'application/json' },
-                  credentials: 'same-origin',
-                  body: JSON.stringify(body)
-                })
-        .then( (res) => { return(res.text()) })
-        .then((data) => {
-          data = JSON.parse(data);
-          data.index = index;
-          if(!remove){
-            this.props.commentEdit(data);
-          }
-          else {
-            this.props.commentRemove(data);
-          }
-        });
+      this.props.editComment(id, remove, this.state.editedComment, index);
     }
   }
 
   addComment(comment){
     if(comment.length > 0){
-      const url = `http://localhost:3001/comments`;
-      console.log('fetching from url', url);
-      var body = {
-        id: uuid(),
-        timestamp: Date.now(),
-        body: this.state.comment,
-        author: 'user' + Math.floor(Math.random() * 2000) + 1,
-        parentId: this.props.match.params.id
-      }
-      fetch(url,{
-                  method: 'post',
-                  headers: { 'Authorization': 'my-auth', 'Content-Type': 'application/json' },
-                  credentials: 'same-origin',
-                  body: JSON.stringify(body)
-                })
-        .then( (res) => { return(res.text()) })
-        .then((data) => {
-          data = JSON.parse(data);
-          this.props.comments[data.parentId].push(data);
-          var obj = {
-            key: data.parentId,
-            comments: this.props.comments[data.parentId].sort((x,y) => y.voteScore - x.voteScore)
-          }
-          this.props.commentsSet(obj);
-          this.setState({comment:''});
-        });
+      this.props.addComment(uuid(), comment, this.props.match.params.id);
+      this.setState({comment:''});
     }
   }
 
@@ -178,14 +77,14 @@ class Post extends Component {
                   :
                 (<div className="post-body">{post.body}</div>)}
             </Col>
+            <Col xs={2} sm={1}>
+            </Col>
+            <Col xs={10} sm={11}>
+              <textarea value={this.state.comment} onChange={(event)=>this.setState({comment:event.target.value})} className='comment-box'></textarea>
+              <div><Button onClick={() => this.addComment(this.state.comment)}>add comment</Button></div>
+            </Col>
           </div>
           ))}
-          <Col xs={2} sm={1}>
-          </Col>
-          <Col xs={10} sm={11}>
-            <div><textarea value={this.state.comment} onChange={(event)=>this.setState({comment:event.target.value})} className='comment-box'></textarea></div>
-            <Button onClick={() => this.addComment(this.state.comment)}>add comment</Button>
-          </Col>
         </Row>
         {this.props.comments[this.props.match.params.id] && this.props.comments[this.props.match.params.id].map((comment, index) => (
         <Row key={comment.id}>
@@ -215,7 +114,7 @@ class Post extends Component {
   }
 }
 
-function mapStateToProps ({post, app, comments}){
+function mapStateToProps ({app, comments}){
   return {
     app,
     comments
@@ -225,10 +124,11 @@ function mapStateToProps ({post, app, comments}){
 function mapDispatchToProps(dispatch){
   return {
     postsSet: (data) => dispatch(setPost(data)),
-    commentEdit: (data) => dispatch(editComment(data)),
     commentRemove: (data) => dispatch(removeComment(data)),
     postRemove: (data) => dispatch(removePost(data)),
-    postEdit: (data) => dispatch(editPost(data))
+    postEdit: (data) => dispatch(editPost(data)),
+    editComment: (id, remove, body, index) => dispatch(editCommentFetch(id, remove, body, index)),
+    addComment: (id, comment, parentId) => dispatch(addCommentFetch(id, comment, parentId))
   }
 }
 
