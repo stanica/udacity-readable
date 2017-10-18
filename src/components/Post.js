@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { withRouter } from 'react-router';
 import { connect } from 'react-redux';
 import { FormattedRelative } from 'react-intl';
-import { setPost, removeComment, editPost, removePost, editCommentFetch, addCommentFetch } from '../actions';
+import { setPost, removeComment, editPostFetch, removePost, editCommentFetch, addCommentFetch } from '../actions';
 import Vote from './Vote.js';
 const uuid = require ('uuid/v1');
 const Grid = require('react-bootstrap').Grid;
@@ -126,7 +126,7 @@ function mapDispatchToProps(dispatch){
     postsSet: (data) => dispatch(setPost(data)),
     commentRemove: (data) => dispatch(removeComment(data)),
     postRemove: (data) => dispatch(removePost(data)),
-    postEdit: (data) => dispatch(editPost(data)),
+    editPost: (data) => dispatch(editPostFetch(data)),
     editComment: (id, remove, body, index) => dispatch(editCommentFetch(id, remove, body, index)),
     addComment: (id, comment, parentId) => dispatch(addCommentFetch(id, comment, parentId))
   }

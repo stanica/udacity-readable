@@ -202,7 +202,7 @@ export function createPost(id, body, title, category){
   }
 }
 
-export function editPostFetch(id, remove, index, body, title){console.log(remove,body, title);
+export function editPostFetch(id, remove, index, body, title){
   return (dispatch) => {
     const url = `http://localhost:3001/posts/${id}`;
     console.log('fetching from url', url);
