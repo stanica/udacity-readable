@@ -126,7 +126,7 @@ function mapDispatchToProps(dispatch){
     postsSet: (data) => dispatch(setPost(data)),
     commentRemove: (data) => dispatch(removeComment(data)),
     postRemove: (data) => dispatch(removePost(data)),
-    editPost: (data) => dispatch(editPostFetch(data)),
+    editPost: (id, remove, index, body, title) => dispatch(editPostFetch(id, remove, index, body, title)),
     editComment: (id, remove, body, index) => dispatch(editCommentFetch(id, remove, body, index)),
     addComment: (id, comment, parentId) => dispatch(addCommentFetch(id, comment, parentId))
   }
