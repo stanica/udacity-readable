@@ -56,6 +56,12 @@ class Post extends Component {
     return (
       <Grid>
         <Row>
+          {
+            this.props.app.posts.length === 0 ?
+            (<h3>404 Post not found!</h3>)
+            :
+            (<div></div>)
+          }
           {this.props.app.posts && this.props.app.posts.filter(post => post.id === this.props.match.params.id).map((post, index) => (
           <div key={post.id} className='show-grid'>
             <Col xs={2} sm={1}>

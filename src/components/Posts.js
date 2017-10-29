@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import { FormattedRelative } from 'react-intl';
+import { withRouter } from 'react-router';
 import { connect } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { setPost, clearPosts, createPost } from '../actions';
+import { setPost, clearPosts, createPost, editPostFetch } from '../actions';
 import Vote from './Vote.js';
 const uuid = require ('uuid/v1');
 const Grid = require('react-bootstrap').Grid;
@@ -23,7 +24,10 @@ class Posts extends Component {
       newPost: false,
       newPostTitle: '',
       newPostBody: '',
-      selectedCategory: 'Choose a category...'
+      selectedCategory: 'Choose a category...',
+      editingPost : false,
+      editedPostTitle: '',
+      editingPostId: ''
     }
   }
 
@@ -42,6 +46,21 @@ class Posts extends Component {
     }
     else {
       window.alert('Your must fill in the Title and Body fields and selecte a category for the post');
+    }
+  }
+
+  editPost(post, id, index, remove){
+    this.props.app.posts.map(
+      (postItem, n) => {
+        if(postItem.id === id){
+          index = n;
+        }
+      }
+    );
+    this.setState({editingPost:false});
+    this.props.editPost(id, remove, index, this.state.editedPostBody, this.state.editedPostTitle);
+    if(remove){
+      this.props.history.push('/');
     }
   }
 
@@ -118,9 +137,16 @@ class Posts extends Component {
               <Vote postId={post.id} score={post.voteScore} index={index} type='posts' />
             </Col>
             <Col className='flex-center' xs={10} sm={11}>
-              <Link to={'/' + post.category + '/' + post.id}>{post.title}</Link>
-              <div className='muted'>{post.voteScore} points by {post.author} <FormattedRelative value={post.timestamp} /> | {this.props.comments[post.id] && this.props.comments[post.id].length || 0} comments
-              </div>
+              {this.state.editingPost  && this.state.editingPostId === post.id ?
+                (<input style={{'width':'350px'}} value={this.state.editedPostTitle} onChange={(event)=>this.setState({editedPostTitle:event.target.value})}></input>)
+                :
+                (<Link to={'/' + post.category + '/' + post.id}>{post.title}</Link>)
+              }
+              {this.state.editingPost && this.state.editingPostId === post.id ?
+                (<div className='muted'>{post.voteScore} points by {post.author} <FormattedRelative value={post.timestamp} /> | {this.props.comments[post.id] && this.props.comments[post.id].length || 0} comments | <a className='clickable' onClick={() => this.editPost(post.body, post.id, index, false)}>save</a> | <a className='clickable' onClick={() => this.editPost(post.body, post.id, index, true)}>delete</a></div>)
+                :
+                (<div className='muted'>{post.voteScore} points by {post.author} <FormattedRelative value={post.timestamp} /> | {this.props.comments[post.id] && this.props.comments[post.id].length || 0} comments | <a className='clickable' onClick={() => this.setState({editingPost:true, editedPostTitle:post.title, editingPostId:post.id})}>edit</a> | <a className='clickable' onClick={() => this.editPost(post.body, post.id, index, true)}>delete</a></div>)
+              }
             </Col>
           </Row>
           ))}
@@ -144,11 +170,12 @@ function mapDispatchToProps(dispatch){
   return {
     postsSet: (data) => dispatch(setPost(data)),
     postsClear: () => dispatch(clearPosts()),
+    editPost: (id, remove, index, body, title) => dispatch(editPostFetch(id, remove, index, body, title)),
     createPost: (id, body, title, category) => dispatch(createPost(id, body, title, category))
   }
 }
 
-export default connect(
+export default withRouter(connect(
   mapStateToProps,
   mapDispatchToProps
-)(Posts);
+)(Posts));
